@@ -5,19 +5,19 @@ export default function ComparisonTable({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs">
+      <table className="w-full text-left text-[11px] lg:text-xs">
         <thead>
           <tr className="border-b border-gray-800">
-            <th className="py-1.5 pr-3 font-medium text-gray-500 uppercase tracking-wider">
+            <th className="py-1 lg:py-1.5 pr-3 font-medium text-gray-500 uppercase tracking-wider">
               Module
             </th>
-            <th className="py-1.5 px-3 font-medium text-gray-500 uppercase tracking-wider">
+            <th className="py-1 lg:py-1.5 px-3 font-medium text-gray-500 uppercase tracking-wider">
               Duty
             </th>
-            <th className="py-1.5 px-3 font-medium text-gray-500 uppercase tracking-wider">
+            <th className="py-1 lg:py-1.5 px-3 font-medium text-gray-500 uppercase tracking-wider">
               Current
             </th>
-            <th className="py-1.5 pl-3 font-medium text-gray-500 uppercase tracking-wider">
+            <th className="py-1 lg:py-1.5 pl-3 font-medium text-gray-500 uppercase tracking-wider">
               Thermal
             </th>
           </tr>
@@ -42,10 +42,10 @@ export default function ComparisonTable({
                 >
                   {m.shortName}
                 </td>
-                <td className="py-1.5 px-3 text-gray-500">
+                <td className="py-1 lg:py-1.5 px-3 text-gray-500">
                   {m.comparison.dutyCycle}
                 </td>
-                <td className="py-1.5 px-3 text-gray-500 font-mono">
+                <td className="py-1 lg:py-1.5 px-3 text-gray-500 font-mono">
                   {m.comparison.current}
                 </td>
                 <td

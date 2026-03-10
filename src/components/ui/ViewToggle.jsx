@@ -34,7 +34,7 @@ export default function ViewToggle({ views, activeView, onViewChange }) {
   return (
     <div
       ref={containerRef}
-      className="inline-flex rounded-md bg-gray-900/80 border border-gray-800 p-0.5 gap-0.5"
+      className="inline-flex flex-nowrap rounded-md bg-gray-900/80 border border-gray-800 p-0.5 gap-0.5"
     >
       {views.map((view) => {
         const active = isActive(view);

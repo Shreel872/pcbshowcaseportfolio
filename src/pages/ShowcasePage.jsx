@@ -23,14 +23,14 @@ const MODULE_MAP = {
 
 function ModuleTabs({ modules, activeId, onSelect }) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex gap-1.5 overflow-x-auto flex-nowrap">
       {modules.map((m) => {
         const isActive = m.id === activeId;
         return (
           <button
             key={m.id}
             onClick={() => onSelect(m.id)}
-            className={`px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-shrink-0 px-3.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
               isActive
                 ? "bg-gray-100 text-gray-900"
                 : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/60"
@@ -143,7 +143,7 @@ export default function ShowcasePage() {
     <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
       {/* Left panel — viewer */}
       <div className="flex flex-col flex-none h-[200px] lg:h-auto lg:flex-1 lg:min-h-0 lg:w-[65%] w-full border-b lg:border-b-0 lg:border-r border-gray-800/50 overflow-hidden">
-        <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-3 border-b border-gray-800/50">
+        <div className="flex-none flex items-center justify-between gap-3 px-3 lg:px-5 py-2 lg:py-3 border-b border-gray-800/50 overflow-x-auto">
           <ModuleTabs
             modules={modules}
             activeId={activeModuleId}

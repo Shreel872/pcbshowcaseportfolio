@@ -12,7 +12,7 @@ export default function EngineeringPanel({
 }) {
   return (
     <div className="lg:h-full flex flex-col">
-      <div className="lg:sticky lg:top-0 z-10 bg-gray-950 border-b border-gray-800/60 p-4 pb-3">
+      <div className="lg:sticky lg:top-0 z-10 bg-gray-950 border-b border-gray-800/60 p-2.5 lg:p-4 lg:pb-3">
         <ComparisonTable
           modules={allModules}
           activeModuleId={activeModuleId}
