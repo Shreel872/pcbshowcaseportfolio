@@ -9,7 +9,7 @@ import { gerberToTexture } from "../utils/gerberToTexture";
  * `textures` is `null` until ready, then `{ top?, bottom? }`.
  *
  * When `gerberFiles` is empty or undefined the hook short-circuits
- * and returns null textures — existing plain-material behaviour
+ * and returns null textures -existing plain-material behaviour
  * is preserved.
  */
 export function useGerberTexture(gerberFiles) {
@@ -18,7 +18,7 @@ export function useGerberTexture(gerberFiles) {
   const [error, setError] = useState(null);
   const cancelledRef = useRef(false);
 
-  // Stable dependency key — avoids re-running on every render
+  // Stable dependency key -avoids re-running on every render
   // when the array reference changes but contents are identical.
   const filesKey = gerberFiles?.length ? gerberFiles.join(",") : "";
 

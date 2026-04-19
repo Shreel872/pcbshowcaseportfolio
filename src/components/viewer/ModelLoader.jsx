@@ -50,7 +50,7 @@ function generatePlanarUVs(mesh) {
   const { min, max } = geometry.boundingBox;
   const size = new THREE.Vector3().subVectors(max, min);
 
-  // Detect the thinnest axis — that's the board thickness.
+  // Detect the thinnest axis -that's the board thickness.
   // Use the other two axes for the UV projection.
   let getU, getV, rangeU, rangeV, minU, minV;
 
@@ -165,7 +165,7 @@ export default function ModelLoader({ path, gerberFiles, onLoad }) {
     if (textures?.top) {
       applyTextureToBoard(boardMeshes, textures.top);
     } else {
-      // Restore original materials — prevents the previous module's
+      // Restore original materials -prevents the previous module's
       // gerber from lingering on the new model during load.
       for (const mesh of boardMeshes) {
         const orig = originalMatsRef.current.get(mesh.uuid);

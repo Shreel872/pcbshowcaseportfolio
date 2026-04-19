@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
+import Section from "../showcase/Section";
 
 const principles = [
   {
-    title: "Automotive Voltage Tolerance",
+    title: "Automotive voltage tolerance",
     desc: "All designs operate across the 9–16 V automotive range with transient awareness per ISO 7637.",
     icon: (
       <path
@@ -13,7 +14,7 @@ const principles = [
     ),
   },
   {
-    title: "Thermal Modelling",
+    title: "Thermal modelling",
     desc: "Copper pour sizing and heat-spreading analysis to manage power dissipation without external heatsinks.",
     icon: (
       <path
@@ -24,7 +25,7 @@ const principles = [
     ),
   },
   {
-    title: "Trace Width Calculations",
+    title: "Trace width calculations",
     desc: "Current density and IPC-2221 trace width sizing for reliable continuous and peak current delivery.",
     icon: (
       <path
@@ -35,7 +36,7 @@ const principles = [
     ),
   },
   {
-    title: "Power Dissipation Analysis",
+    title: "Power dissipation analysis",
     desc: "Worst-case power calculations at maximum input voltage for resistor and LED thermal budgets.",
     icon: (
       <path
@@ -46,7 +47,7 @@ const principles = [
     ),
   },
   {
-    title: "Design for Manufacturability",
+    title: "Design for manufacturability",
     desc: "Component placement, pad sizing, and design rules optimised for standard PCB fabrication processes.",
     icon: (
       <path
@@ -57,7 +58,7 @@ const principles = [
     ),
   },
   {
-    title: "Component Selection",
+    title: "Component selection",
     desc: "LED and passive component selection driven by datasheet parameters, availability, and automotive temperature ratings.",
     icon: (
       <path
@@ -68,7 +69,7 @@ const principles = [
     ),
   },
   {
-    title: "Worst-Case Analysis",
+    title: "Worst-case analysis",
     desc: "All circuits validated at voltage and temperature extremes to guarantee operation under automotive conditions.",
     icon: (
       <path
@@ -80,64 +81,42 @@ const principles = [
   },
 ];
 
-const container = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.07 },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-};
-
 export default function EngineeringApproach() {
   return (
-    <section className="px-6 py-16 max-w-5xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.5 }}
-      >
-        <p className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">
-          Methodology
-        </p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-100 tracking-tight mb-10">
-          Engineering Approach
-        </h2>
-      </motion.div>
-
-      <motion.div
-        variants={container}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, margin: "-60px" }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
-        {principles.map((p) => (
-          <motion.div
+    <Section
+      eyebrow="Methodology"
+      title="Engineering approach"
+      description="The principles that guide every board — from first schematic to final validation."
+    >
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+        {principles.map((p, i) => (
+          <motion.li
             key={p.title}
-            variants={item}
-            className="border border-gray-800 rounded-lg p-4 bg-gray-900/30 hover:bg-gray-900/50 hover:border-gray-700 transition-colors"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: i * 0.04, ease: "easeOut" }}
+            className="flex items-start gap-3 py-3 border-b border-gray-800/40 last:border-b-0 md:even:last:border-b md:[&:nth-last-child(2)]:border-b-0"
           >
-            <svg
-              className="w-5 h-5 text-gray-500 mb-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              {p.icon}
-            </svg>
-            <h3 className="text-sm font-semibold text-gray-200 mb-1.5">
-              {p.title}
-            </h3>
-            <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
-          </motion.div>
+            <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-gray-800/40 border border-gray-800/60">
+              <svg
+                className="w-4 h-4 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.6}
+              >
+                {p.icon}
+              </svg>
+            </span>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-gray-200 mb-1">
+                {p.title}
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
+            </div>
+          </motion.li>
         ))}
-      </motion.div>
-    </section>
+      </ul>
+    </Section>
   );
 }

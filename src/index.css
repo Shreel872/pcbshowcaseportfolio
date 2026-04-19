@@ -16,6 +16,15 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Hide scrollbar on horizontal nav scrollers */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* KaTeX overrides for dark backgrounds */
 .katex .mord,
 .katex .mbin,

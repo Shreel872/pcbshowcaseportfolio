@@ -13,7 +13,7 @@ export const projects = [
     title: "Array Control Unit",
     subtitle: "HV precharge controller with isolated hardware verification",
     description:
-      "Solar vehicle array control unit managing the precharge sequence between the solar array MPPT and the battery pack. Features isolated ground planes for HV/LV separation and hardware-verified contactor control via optocoupled comparators.",
+      "Solar vehicle array control unit that manages the precharge sequence between the MPPT and battery pack. Uses a precharge resistor to limit inrush current into the MPPT capacitors, with isolated ground planes for HV/LV separation and hardware-verified contactor control through optocoupled comparators.",
     tags: ["Power Electronics", "HV Isolation", "CAN Bus", "Solar Vehicle"],
     status: "in-progress",
     moduleCount: 1,
