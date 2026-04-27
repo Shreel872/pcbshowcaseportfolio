@@ -2,9 +2,15 @@
 // Interactive precharge simulator — mirrors the actual LTspice
 // simulation of the HV divider used on the ACU.
 //
-// n005 = MPPT DC link voltage (rising)
-// n004 = battery reference (constant, set by R4 / (R1+R4))
-// output = comparator output, flips HIGH when n005 > n004
+// MPPT_TAP = MPPT DC link voltage (rising)
+// BAT_REF  = battery reference (constant, set by R9 / (R1_top + R9))
+// VERIF_SIG = comparator output, flips HIGH when MPPT_TAP > BAT_REF
+//
+// Real components (matches /schematics/ACU.pdf sheet 2):
+//   Top legs: 4 × 250 kΩ in series (RNCF0805BTE250K)
+//   R9  = 21.3 kΩ 0.1% (RN73H1JTTD2132B25), battery bottom
+//   R10 = 23.7 kΩ 1%   (RMCF0603FT23K7),    MPPT bottom
+//   COMP1 = TLV3211QDCKRQ1 (push-pull rail-to-rail comparator)
 // ─────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useState } from "react";
@@ -13,8 +19,8 @@ import { useEffect, useMemo, useState } from "react";
 const R1_EACH  = 250_000;
 const R1_COUNT = 4;
 const R1       = R1_EACH * R1_COUNT;   // 1.0 MΩ per leg
-const R4_BAT   = 21_200;               // battery divider bottom
-const R3_MPPT  = 23_500;               // MPPT divider bottom
+const R9_BAT   = 21_300;               // battery divider bottom (RN73 0.1%)
+const R10_MPPT = 23_700;               // MPPT divider bottom    (RMCF 1%)
 const V_BAT    = 142.7;
 const V_CC     = 5;
 const V_MPPT_PEAK = 150;
@@ -22,21 +28,21 @@ const RAMP_END_MS = 5;
 const SIM_END_MS  = 10;
 
 // ── Derived ─────────────────────────────────────────────────
-const V_REF       = (V_BAT * R4_BAT) / (R1 + R4_BAT);
-const V_MPPT_TRIP = (V_REF * (R1 + R3_MPPT)) / R3_MPPT;
+const V_REF       = (V_BAT * R9_BAT) / (R1 + R9_BAT);
+const V_MPPT_TRIP = (V_REF * (R1 + R10_MPPT)) / R10_MPPT;
 const T_TRIP_MS   = (V_MPPT_TRIP / V_MPPT_PEAK) * RAMP_END_MS;
 
 // ── Power (constant battery divider) ────────────────────────
-const I_BAT          = V_BAT / (R1 + R4_BAT);
+const I_BAT          = V_BAT / (R1 + R9_BAT);
 const P_BAT_TOTAL    = I_BAT * V_BAT;
 const P_BAT_R1_EACH  = I_BAT * I_BAT * R1_EACH;
-const P_BAT_R4       = I_BAT * I_BAT * R4_BAT;
+const P_BAT_R9       = I_BAT * I_BAT * R9_BAT;
 
 // ── Power (MPPT divider, worst-case 150 V) ───────────────────
-const I_MPPT_PEAK        = V_MPPT_PEAK / (R1 + R3_MPPT);
+const I_MPPT_PEAK        = V_MPPT_PEAK / (R1 + R10_MPPT);
 const P_MPPT_PEAK_TOTAL  = I_MPPT_PEAK * V_MPPT_PEAK;
 const P_MPPT_PEAK_R1_EACH = I_MPPT_PEAK * I_MPPT_PEAK * R1_EACH;
-const P_MPPT_PEAK_R3     = I_MPPT_PEAK * I_MPPT_PEAK * R3_MPPT;
+const P_MPPT_PEAK_R10    = I_MPPT_PEAK * I_MPPT_PEAK * R10_MPPT;
 const V_PER_R1_PEAK      = I_MPPT_PEAK * R1_EACH;
 
 // Real-time replay: 6.5 s wall clock = one 10 ms sim loop
@@ -164,15 +170,15 @@ function DividerSchematic({ vMppt, vSense, tripped }) {
       <line x1={xCol} y1={mpptStkBot} x2={xCol} y2={mpptTapY}
         stroke={wire} strokeWidth={1.2} />
 
-      {/* tap n005 */}
+      {/* MPPT tap */}
       <circle cx={xCol} cy={mpptTapY} r={3} fill={tapColor} />
       <text x={xCol - 8} y={mpptTapY - 5} textAnchor="end"
-        fill={tapColor} fontSize={7} fontWeight="700">n005</text>
+        fill={tapColor} fontSize={7} fontWeight="700">MPPT tap</text>
       <text x={xCol - 8} y={mpptTapY + 6} textAnchor="end"
         fill={tapColor} fontSize={7} fontFamily="monospace">{fmt(vSense, 3)} V</text>
 
       <line x1={xCol} y1={mpptTapY} x2={xCol} y2={mpptResY} stroke={wire} strokeWidth={1.2} />
-      <Res cx={xCol} y={mpptResY} color="#3b82f6" label="R3" value="23.5k" />
+      <Res cx={xCol} y={mpptResY} color="#3b82f6" label="R10" value="23.7k" />
       <line x1={xCol} y1={mpptResY + 22} x2={xCol} y2={mpptGndY} stroke={wire} strokeWidth={1.2} />
       <Gnd cx={xCol} cy={mpptGndY} color="#334155" />
 
@@ -186,15 +192,15 @@ function DividerSchematic({ vMppt, vSense, tripped }) {
       <line x1={xCol} y1={batStkBot} x2={xCol} y2={batTapY}
         stroke={wire} strokeWidth={1.2} />
 
-      {/* tap n004 */}
+      {/* battery tap (V_ref) */}
       <circle cx={xCol} cy={batTapY} r={3} fill="#6366f1" />
       <text x={xCol - 8} y={batTapY - 5} textAnchor="end"
-        fill="#a5b4fc" fontSize={7} fontWeight="700">n004</text>
+        fill="#a5b4fc" fontSize={7} fontWeight="700">V_ref</text>
       <text x={xCol - 8} y={batTapY + 6} textAnchor="end"
         fill="#a5b4fc" fontSize={7} fontFamily="monospace">{fmt(V_REF, 3)} V</text>
 
       <line x1={xCol} y1={batTapY} x2={xCol} y2={batResY} stroke={wire} strokeWidth={1.2} />
-      <Res cx={xCol} y={batResY} color="#6366f1" label="R4" value="21.2k" />
+      <Res cx={xCol} y={batResY} color="#6366f1" label="R9" value="21.3k" />
       <line x1={xCol} y1={batResY + 22} x2={xCol} y2={batGndY} stroke={wire} strokeWidth={1.2} />
       <Gnd cx={xCol} cy={batGndY} color="#334155" />
 
@@ -210,7 +216,7 @@ function DividerSchematic({ vMppt, vSense, tripped }) {
         fill="none" stroke="#6366f1" strokeWidth={1.4} strokeLinejoin="round"
       />
 
-      {/* ─── Comparator (LT1720) ──────────────────────── */}
+      {/* ─── Comparator (TLV3211) ─────────────────────── */}
       <polygon
         points={`${compX},${plusYc} ${compX},${minusYc} ${apexX},${cMidY}`}
         fill="#0f172a" stroke="#10b981" strokeWidth={1.6}
@@ -222,7 +228,7 @@ function DividerSchematic({ vMppt, vSense, tripped }) {
         fontSize={11} fontWeight="700">−</text>
       {/* part label */}
       <text x={compX + compW / 2} y={cMidY + 4} textAnchor="middle"
-        fill="#6ee7b7" fontSize={7} fontWeight="600">LT1720</text>
+        fill="#6ee7b7" fontSize={7} fontWeight="600">TLV3211</text>
 
       {/* Vcc pin (top of triangle) */}
       <line x1={compX + compW / 2} y1={plusYc} x2={compX + compW / 2} y2={plusYc - 16}
@@ -261,7 +267,7 @@ function WaveformPlot({ tSim }) {
   for (let i = 0; i <= maxI; i++) {
     const t  = (i / N) * SIM_END_MS;
     const vm = t <= RAMP_END_MS ? (t / RAMP_END_MS) * V_MPPT_PEAK : V_MPPT_PEAK;
-    const vs = (vm * R3_MPPT) / (R1 + R3_MPPT);
+    const vs = (vm * R10_MPPT) / (R1 + R10_MPPT);
     senseTrace.push(`${xAt(t).toFixed(1)},${yAt(vs).toFixed(1)}`);
   }
 
@@ -334,13 +340,13 @@ function WaveformPlot({ tSim }) {
 
       {/* Legend */}
       <line x1={padL + 8}   y1={padT - 7} x2={padL + 24}  y2={padT - 7} stroke="#22c55e" strokeWidth={2} />
-      <text x={padL + 27}  y={padT - 4} fill="#86efac" fontSize={7.5} fontFamily="monospace">n005 · MPPT</text>
+      <text x={padL + 27}  y={padT - 4} fill="#86efac" fontSize={7.5} fontFamily="monospace">MPPT tap</text>
 
       <line x1={padL + 116} y1={padT - 7} x2={padL + 132} y2={padT - 7} stroke="#3b82f6" strokeWidth={2} />
-      <text x={padL + 135} y={padT - 4} fill="#93c5fd" fontSize={7.5} fontFamily="monospace">n004 · V_ref</text>
+      <text x={padL + 135} y={padT - 4} fill="#93c5fd" fontSize={7.5} fontFamily="monospace">V_ref (battery tap)</text>
 
-      <line x1={padL + 224} y1={padT - 7} x2={padL + 240} y2={padT - 7} stroke="#ef4444" strokeWidth={2} />
-      <text x={padL + 243} y={padT - 4} fill="#fca5a5" fontSize={7.5} fontFamily="monospace">output</text>
+      <line x1={padL + 254} y1={padT - 7} x2={padL + 270} y2={padT - 7} stroke="#ef4444" strokeWidth={2} />
+      <text x={padL + 273} y={padT - 4} fill="#fca5a5" fontSize={7.5} fontFamily="monospace">VERIF_SIG</text>
 
       <text x={padL + plotW} y={padT - 4} textAnchor="end"
         fill="#fbbf24" fontSize={7}>trip @ {fmt(T_TRIP_MS, 2)} ms</text>
@@ -356,11 +362,11 @@ export default function PrechargeSimulator() {
     const vm = tSim <= RAMP_END_MS
       ? (tSim / RAMP_END_MS) * V_MPPT_PEAK
       : V_MPPT_PEAK;
-    const vs = (vm * R3_MPPT) / (R1 + R3_MPPT);
+    const vs = (vm * R10_MPPT) / (R1 + R10_MPPT);
     return { vMppt: vm, vSense: vs, tripped: vs >= V_REF };
   }, [tSim]);
 
-  const i_mppt      = vMppt / (R1 + R3_MPPT);
+  const i_mppt      = vMppt / (R1 + R10_MPPT);
   const p_mppt_live = i_mppt * vMppt;
 
   return (
@@ -374,19 +380,19 @@ export default function PrechargeSimulator() {
               LTspice · .tran 10ms · Live Replay
             </p>
             <h3 className="text-lg font-semibold text-gray-100 mb-2">
-              HV Voltage Divider + LT1720 Comparator
+              HV Voltage Divider + TLV3211 Comparator
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
               Reproduced from the LTspice transient run used to confirm the
-              divider ratios. Node <span className="font-mono text-green-400">n005</span> tracks
-              the MPPT DC link voltage as it charges up;{" "}
-              <span className="font-mono text-indigo-300">n004</span> is the
-              battery reference — a fixed fraction of 142.7 V set by R4. When
-              n005 crosses n004 the LT1720 output flips HIGH, signalling that the
-              DC link has reached ≈90% of battery voltage and the main contactor
-              can close. The linear ramp is a test stimulus for clarity; the real
-              DC link follows an RC curve through the precharge resistor, but the
-              trip threshold is identical.
+              divider ratios. The <span className="font-mono text-green-400">MPPT tap</span>{" "}
+              tracks the DC link voltage as it charges up;{" "}
+              <span className="font-mono text-indigo-300">battery V_ref</span> is a fixed
+              fraction of 142.7 V set by R9. When the MPPT tap crosses V_ref, the
+              TLV3211 output (VERIF_SIG) flips HIGH, signalling that the DC link
+              has reached ≈90% of battery voltage and the main contactor can close.
+              The linear ramp is a test stimulus for clarity — the real DC link
+              follows an RC curve through the precharge resistor, but the trip
+              threshold is identical.
             </p>
           </div>
           {/* SPICE file download — drop acu-precharge.asc into /public to enable */}
@@ -423,8 +429,8 @@ export default function PrechargeSimulator() {
             </div>
             <span className="text-[11px] font-mono text-gray-500">
               t = {fmt(tSim, 2)} ms &nbsp;·&nbsp;
-              n005 = {fmt(vSense, 3)} V &nbsp;·&nbsp;
-              n004 = {fmt(V_REF, 3)} V &nbsp;·&nbsp;
+              MPPT tap = {fmt(vSense, 3)} V &nbsp;·&nbsp;
+              V_ref = {fmt(V_REF, 3)} V &nbsp;·&nbsp;
               V_mppt = {fmt(vMppt, 1)} V
             </span>
           </div>
@@ -477,22 +483,30 @@ export default function PrechargeSimulator() {
                 <span className="font-mono text-gray-500 text-[10px]">4 × 250 kΩ series</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">R4 — battery bottom</span>
-                <span className="font-mono text-indigo-300">21.2 kΩ</span>
+                <span className="text-gray-500">R9 — battery bottom</span>
+                <span className="font-mono text-indigo-300">21.3 kΩ</span>
+              </div>
+              <div className="flex justify-between pl-3 border-l border-gray-800">
+                <span className="text-gray-600 text-[10px]">part</span>
+                <span className="font-mono text-gray-500 text-[10px]">RN73 0.1%</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">R3 — MPPT bottom</span>
-                <span className="font-mono text-blue-300">23.5 kΩ</span>
+                <span className="text-gray-500">R10 — MPPT bottom</span>
+                <span className="font-mono text-blue-300">23.7 kΩ</span>
+              </div>
+              <div className="flex justify-between pl-3 border-l border-gray-800">
+                <span className="text-gray-600 text-[10px]">part</span>
+                <span className="font-mono text-gray-500 text-[10px]">RMCF 1%</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Comparator</span>
-                <span className="font-mono text-green-300">LT1720</span>
+                <span className="font-mono text-green-300">TLV3211</span>
               </div>
             </div>
 
             <div className="mt-3 pt-3 border-t border-gray-800/60 space-y-1.5 text-[11px]">
               <div className="flex justify-between">
-                <span className="text-gray-500">n004 · V_ref</span>
+                <span className="text-gray-500">V_ref (battery tap)</span>
                 <span className="font-mono text-indigo-300">{fmt(V_REF, 3)} V</span>
               </div>
               <div className="flex justify-between">
@@ -522,11 +536,11 @@ export default function PrechargeSimulator() {
                 Battery divider — constant
               </p>
               <div className="font-mono text-gray-300 space-y-1 bg-gray-950/50 p-3 rounded border border-gray-800/40">
-                <div>I  = 142.7 V / 1.0212 MΩ</div>
+                <div>I  = 142.7 V / 1.0213 MΩ</div>
                 <div className="text-indigo-300">&nbsp;&nbsp; = {fmt(I_BAT * 1e6, 2)} μA</div>
                 <div className="mt-1">P_total    = {fmt(P_BAT_TOTAL * 1e3, 3)} mW</div>
                 <div>P per 250k = {fmt(P_BAT_R1_EACH * 1e3, 3)} mW</div>
-                <div>P on R4    = {fmt(P_BAT_R4 * 1e3, 3)} mW</div>
+                <div>P on R9    = {fmt(P_BAT_R9 * 1e3, 3)} mW</div>
               </div>
             </div>
             <div>
@@ -534,11 +548,11 @@ export default function PrechargeSimulator() {
                 MPPT divider — worst case 150 V
               </p>
               <div className="font-mono text-gray-300 space-y-1 bg-gray-950/50 p-3 rounded border border-gray-800/40">
-                <div>I  = 150 V / 1.0235 MΩ</div>
+                <div>I  = 150 V / 1.0237 MΩ</div>
                 <div className="text-green-300">&nbsp;&nbsp; = {fmt(I_MPPT_PEAK * 1e6, 2)} μA</div>
                 <div className="mt-1">P_total    = {fmt(P_MPPT_PEAK_TOTAL * 1e3, 3)} mW</div>
                 <div>P per 250k = {fmt(P_MPPT_PEAK_R1_EACH * 1e3, 3)} mW</div>
-                <div>P on R3    = {fmt(P_MPPT_PEAK_R3 * 1e3, 3)} mW</div>
+                <div>P on R10   = {fmt(P_MPPT_PEAK_R10 * 1e3, 3)} mW</div>
               </div>
             </div>
           </div>
@@ -567,10 +581,10 @@ export default function PrechargeSimulator() {
             <li>
               <span className="text-blue-300 font-medium">Voltage rating per part — </span>
               splitting across four series resistors drops each one to
-              ≈{fmt(V_PER_R1_PEAK, 1)} V at the 150 V peak. Standard 0603
-              thick-film parts are rated to 75–150 V. A single 1 MΩ resistor
-              would see almost the full DC link voltage and would need a
-              specialty HV part (1206/2010, 200 V+ rated).
+              ≈{fmt(V_PER_R1_PEAK, 1)} V at the 150 V peak. The chosen
+              RNCF0805BTE250K is a 0.1% thin-film 0805 rated to 150 V working.
+              A single 1 MΩ resistor would see almost the full DC link voltage
+              and would need a specialty HV part (1206/2010, 200 V+ rated).
             </li>
             <li>
               <span className="text-blue-300 font-medium">Low quiescent draw — </span>
@@ -592,8 +606,11 @@ export default function PrechargeSimulator() {
             <li>
               <span className="text-blue-300 font-medium">Tradeoff — </span>
               1 MΩ source impedance makes the comparator input sensitive to bias
-              current and leakage. The LT1720 (2 μA bias typ) was chosen for
-              this; the PCB layout uses guard rings around the input pins.
+              current and leakage. The TLV3211 (CMOS input, ~1 pA bias typ) was
+              picked specifically for this — its input current is so small that
+              the 1 MΩ source impedance contributes essentially zero offset error.
+              PCB layout still uses guard rings to keep surface-leakage paths
+              negligible at HV.
             </li>
           </ul>
         </div>
@@ -601,21 +618,25 @@ export default function PrechargeSimulator() {
         {/* LV divider note */}
         <div className="border border-gray-800/60 rounded-lg bg-gray-900/30 p-4 mb-4">
           <p className="text-[10px] uppercase tracking-widest text-gray-600 mb-2">
-            LV side divider
+            What happens to VERIF_SIG on the LV side
           </p>
           <p className="text-xs text-gray-400 leading-relaxed">
-            A separate resistive divider on the LV side drops the 24 V rail to
-            the opto supply voltage (~5 V). Resistive rather than a linear
-            regulator because opto driver current is in the milliamp range —
-            I²R loss in the divider is negligible and cost/area is lower. The
-            HV-side 5 V rail powering the comparator (Vcc in the schematic above)
-            comes from the isolated 24 V→5 V buck converter, not this LV divider.
+            The TLV3211 output drives the optocoupler LED through R16 = 75 Ω.
+            On the LV side the phototransistor pulls OPTO_OUT1 against a 24 V
+            pull-up. That logic level then feeds a CMOS inverter (U3) that splits
+            it into two mutually-exclusive signals — one going to U5 (BTS441
+            PROFET driving the main contactor coil) and the inverted copy going
+            to U4 (BTS441 driving the precharge contactor coil). Each PROFET
+            input is scaled by a 12 kΩ / 51 kΩ divider so the 24 V logic stays
+            inside the BTS441's input range. The HV-side 5 V rail that powers
+            the comparator (V_CC in the schematic above) comes from the RKE-2405
+            isolated buck, not from any LV divider.
           </p>
         </div>
 
         <p className="text-[10px] text-gray-700 leading-relaxed">
           The voltage ramp is a test stimulus — any rising input that crosses
-          n004 flips the comparator the same way. The real DC link charges as
+          V_ref flips the comparator the same way. The real DC link charges as
           an RC curve through the precharge resistor. This simulation confirms
           the divider ratios and trip point, not the system dynamics.
         </p>

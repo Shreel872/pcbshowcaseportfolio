@@ -1,19 +1,22 @@
 // ─────────────────────────────────────────────────────────────
-// Clean SVG block diagrams for the ACU project.
+// Clean SVG block diagrams for the ACU project. Mirrors the
+// schematic in /public/schematics/ACU.pdf.
+//
 // "system": high-level precharge flow (ECU is monitoring only)
 // "hw-verification": isolated hardware verification
 //
 // Topology (redesigned, pure hardware):
 //   ECU receives BMU + MPPT voltages over CAN for monitoring only
-//   No ECU enable signal -control loop is fully hardware
-//   HV comparator fires at V_mppt DC link >= 90% V_bat
-//   Opto crosses HV/LV isolation
-//   LV voltage divider scales opto output 24 V to 5 V logic
-//   Transistor level-shifts logic to 24 V PROFET gate drive
-//   PROFET activates main +ve contactor (24 V coil)
-//   P-ch MOSFET deactivates precharge contactor simultaneously
-//   24 V to 5 V isolated buck supplies HV-side comparator
-//   Status LED (~100 mA) on HV 5 V rail keeps iso buck in reg
+//   No ECU enable signal — control loop is fully hardware
+//   HV comparator (TLV3211) fires at V_mppt DC link ≥ 90% V_bat
+//   Single opto channel crosses HV/LV isolation
+//   On LV side a CMOS inverter splits OPTO_OUT1 into two
+//   mutually-exclusive logic signals
+//   12 k / 51 k dividers scale 24 V logic into BTS441 IN range
+//   U5 = BTS441 PROFET drives main contactor coil
+//   U4 = BTS441 PROFET drives precharge contactor coil (inverted)
+//   24 V to 5 V isolated buck (RKE-2405S/H) feeds HV-side comparator
+//   Status LED (~20 mA, 100 mW) on HV 5 V rail keeps iso buck in reg
 // ─────────────────────────────────────────────────────────────
 
 function Arrow({ x1, y1, x2, y2, color = "#64748b", dashed = false }) {
@@ -157,10 +160,10 @@ function SystemDiagram() {
       <Arrow x1={acuCx} y1={234} x2={acuCx} y2={244} color="#475569" />
 
       <Block x={acuX + 16} y={244} w={acuW - 32} h={28} label="Precharge Contactor" fill="#1e293b" stroke="#f59e0b" fontSize={10} />
-      <Label x={acuCx} y={278} text="P-ch MOSFET deactivates" color="#fbbf24" fontSize={7} />
+      <Label x={acuCx} y={278} text="U4 BTS441 (inverted)" color="#fbbf24" fontSize={7} />
 
       <Block x={acuX + 16} y={288} w={acuW - 32} h={28} label="Main +ve Contactor" fill="#1e293b" stroke="#f59e0b" fontSize={10} />
-      <Label x={acuCx} y={323} text="PROFET activates (24 V)" color="#fbbf24" fontSize={7} />
+      <Label x={acuCx} y={323} text="U5 BTS441 (24 V coil)" color="#fbbf24" fontSize={7} />
 
       {/* ACU to Battery */}
       <Arrow x1={acuX + acuW} y1={220} x2={590} y2={220} color="#3b82f6" />
@@ -194,10 +197,14 @@ function SystemDiagram() {
 
 /* ═══════════════════════════════════════════════════════════════
    HW VERIFICATION DIAGRAM
-   Full redesign: no ECU enable, no CMOS AND.
-   Flow: HV comparator -> opto -> LV divider (24->5V) ->
-         transistor -> PROFET gate (24V) -> contactors
-   Power: 24V LV -> iso buck -> HV 5V rail -> comparator + status LED
+   Mirrors the actual schematic (sheets 1 + 3) of ACU.pdf.
+   Flow:
+     HV: TLV3211 comparator -> R16 75Ω -> opto LED -> isolation
+     LV: opto pull-up to 24V -> CMOS inverter U3 (splits signal)
+         -> 12k/51k logic dividers -> BTS441 PROFET pair (U4, U5)
+         -> contactor coils
+   Power: 24V LV -> RKE-2405S/H iso buck -> HV 5V rail
+          (powers TLV3211 + status LED keeping buck in regulation)
    ═══════════════════════════════════════════════════════════════ */
 
 function HWVerificationDiagram() {
@@ -235,8 +242,8 @@ function HWVerificationDiagram() {
 
       {/* 24V to 5V Iso Buck centred on isolation line */}
       <rect x={ISO - 60} y={72} width={120} height={32} rx={6} fill="#27171a" stroke="#ef4444" strokeWidth={1.5} />
-      <text x={ISO} y={85} textAnchor="middle" fill="#fca5a5" fontSize={10} fontWeight="600">Iso Buck</text>
-      <text x={ISO} y={98} textAnchor="middle" fill="#fca5a5" fontSize={7}>24 V to 5 V isolated</text>
+      <text x={ISO} y={85} textAnchor="middle" fill="#fca5a5" fontSize={10} fontWeight="600">RKE-2405S/H</text>
+      <text x={ISO} y={98} textAnchor="middle" fill="#fca5a5" fontSize={7}>24 V → 5 V iso buck (2 W)</text>
 
       {/* 5V output into HV side */}
       <Arrow x1={ISO - 60} y1={88} x2={315} y2={88} color="#a78bfa" />
@@ -250,7 +257,7 @@ function HWVerificationDiagram() {
       <line x1={200} y1={88} x2={200} y2={115} stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="4 2" />
 
       {/* Status LED block */}
-      <Block x={145} y={115} w={110} h={32} label="Status LED" sublabel="~100 mA baseline" fill="#1e293b" stroke="#10b981" fontSize={10} />
+      <Block x={145} y={115} w={110} h={32} label="D1 Status LED" sublabel="~20 mA / 100 mW" fill="#1e293b" stroke="#10b981" fontSize={10} />
       <Label x={130} y={131} text="(keeps iso buck" color="#94a3b8" fontSize={7} anchor="end" />
       <Label x={130} y={141} text="in regulation)" color="#94a3b8" fontSize={7} anchor="end" />
 
@@ -282,69 +289,74 @@ function HWVerificationDiagram() {
       <Label x={255} y={295} text="Scaled V_mppt" color="#94a3b8" fontSize={7} anchor="start" />
 
       {/* Comparator */}
-      <Block x={293} y={215} w={135} h={50} label="Comparator" sublabel="V_mppt >= 90% V_bat" fill="#1e293b" stroke="#10b981" fontSize={11} />
+      <Block x={293} y={215} w={135} h={50} label="TLV3211" sublabel="V_mppt ≥ 90% V_bat" fill="#1e293b" stroke="#10b981" fontSize={11} />
       <circle cx={315} cy={215} r={3} fill="#a78bfa" />
 
-      {/* Comparator output to OPTO */}
+      {/* Comparator output through R16 to OPTO LED */}
       <Arrow x1={428} y1={240} x2={ISO - 35} y2={240} color="#10b981" />
       <Label x={434} y={230} text="HIGH at 90%" color="#6ee7b7" fontSize={9} anchor="start" />
+      <Label x={434} y={251} text="(R16 = 75 Ω limit)" color="#64748b" fontSize={7} anchor="start" />
 
       {/* OPTO on isolation boundary */}
       <rect x={ISO - 35} y={226} width={70} height={30} rx={6} fill="#27171a" stroke="#ef4444" strokeWidth={1.5} />
-      <text x={ISO} y={244} textAnchor="middle" fill="#fca5a5" fontSize={11} fontWeight="600">OPTO</text>
+      <text x={ISO} y={240} textAnchor="middle" fill="#fca5a5" fontSize={11} fontWeight="600">U1</text>
+      <text x={ISO} y={250} textAnchor="middle" fill="#fca5a5" fontSize={7}>OPTO</text>
 
       {/* ═══ ROW 2 continued: LV Signal Chain ═══ */}
 
-      {/* OPTO output to LV divider */}
+      {/* OPTO output (24 V pull-up) to CMOS inverter splitter */}
       <Arrow x1={ISO + 35} y1={240} x2={545} y2={240} color="#22c55e" />
-      <Label x={550} y={230} text="24 V logic" color="#86efac" fontSize={8} anchor="start" />
+      <Label x={550} y={230} text="OPTO_OUT1" color="#86efac" fontSize={8} anchor="start" />
+      <Label x={550} y={251} text="(24 V pull-up)" color="#64748b" fontSize={7} anchor="start" />
 
-      {/* LV Voltage Divider */}
-      <Block x={545} y={222} w={100} h={36} label="LV Divider" sublabel="24 V to 5 V" fill="#1e293b" stroke="#22c55e" fontSize={10} />
+      {/* CMOS inverter U3 — splits signal */}
+      <Block x={545} y={222} w={100} h={36} label="U3 Inverter" sublabel="splits signal" fill="#1e293b" stroke="#22c55e" fontSize={10} />
 
+      {/* Branch node after inverter */}
       <Arrow x1={645} y1={240} x2={680} y2={240} color="#22c55e" />
-      <Label x={650} y={230} text="5 V logic" color="#86efac" fontSize={8} anchor="start" />
+      <circle cx={680} cy={240} r={3} fill="#22c55e" />
 
-      {/* Transistor level-shifter */}
-      <Block x={680} y={222} w={90} h={36} label="Transistor" sublabel="level-shifter" fill="#1e293b" stroke="#22c55e" fontSize={10} />
+      {/* ── Path A (TOP): direct OPTO_OUT1 → 12k/51k → U5 BTS441 → main contactor */}
+      <line x1={680} y1={240} x2={680} y2={195} stroke="#22c55e" strokeWidth={1.5} />
+      <line x1={680} y1={195} x2={695} y2={195} stroke="#22c55e" strokeWidth={1.5} />
 
-      <Arrow x1={770} y1={240} x2={800} y2={240} color="#22c55e" />
-      <circle cx={800} cy={240} r={4} fill="#22c55e" />
+      <Block x={695} y={178} w={70} h={34} label="12k/51k" sublabel="logic divider" fill="#1e293b" stroke="#475569" fontSize={9} />
+      <Arrow x1={765} y1={195} x2={790} y2={195} color="#22c55e" />
 
-      {/* Path A: PROFET drives main +ve */}
-      <line x1={800} y1={240} x2={800} y2={195} stroke="#22c55e" strokeWidth={1.5} />
-      <Arrow x1={800} y1={195} x2={830} y2={195} color="#22c55e" />
-
-      <Block x={830} y={178} w={85} h={34} label="PROFET" sublabel="high-side" fill="#1e293b" stroke="#22c55e" fontSize={10} />
+      <Block x={790} y={178} w={75} h={34} label="U5 BTS441" sublabel="PROFET" fill="#1e293b" stroke="#22c55e" fontSize={9} />
       {/* 24V enters PROFET source */}
-      <line x1={700} y1={178} x2={830} y2={178} stroke="#22c55e" strokeWidth={1} strokeDasharray="4 2" />
-      <Arrow x1={915} y1={195} x2={940} y2={195} color="#22c55e" />
+      <line x1={700} y1={178} x2={790} y2={178} stroke="#22c55e" strokeWidth={1} strokeDasharray="4 2" />
+      <Arrow x1={865} y1={195} x2={900} y2={195} color="#22c55e" />
 
-      <Block x={940} y={178} w={35} h={34} label="Main" fill="#0f172a" stroke="#22c55e" fontSize={9} />
-      <Label x={957} y={220} text="CLOSE" color="#86efac" fontSize={8} fontWeight="600" />
+      <Block x={900} y={178} w={45} h={34} label="Main" fill="#0f172a" stroke="#22c55e" fontSize={9} />
+      <Label x={922} y={220} text="CLOSE" color="#86efac" fontSize={8} fontWeight="600" />
 
-      {/* Path B: P-ch MOSFET deactivates precharge */}
-      <line x1={800} y1={240} x2={800} y2={295} stroke="#f59e0b" strokeWidth={1.5} />
-      <Arrow x1={800} y1={295} x2={830} y2={295} color="#f59e0b" />
+      {/* ── Path B (BOTTOM): inverted → 12k/51k → U4 BTS441 → precharge contactor */}
+      <line x1={680} y1={240} x2={680} y2={295} stroke="#f59e0b" strokeWidth={1.5} />
+      <line x1={680} y1={295} x2={695} y2={295} stroke="#f59e0b" strokeWidth={1.5} />
 
-      <Block x={830} y={278} w={85} h={34} label="P-ch FET" fill="#1e293b" stroke="#f59e0b" fontSize={10} />
-      <Arrow x1={915} y1={295} x2={940} y2={295} color="#f59e0b" />
+      <Block x={695} y={278} w={70} h={34} label="12k/51k" sublabel="logic divider" fill="#1e293b" stroke="#475569" fontSize={9} />
+      <Arrow x1={765} y1={295} x2={790} y2={295} color="#f59e0b" />
 
-      <Block x={940} y={278} w={35} h={34} label="Pre" fill="#0f172a" stroke="#f59e0b" fontSize={9} />
-      <Label x={957} y={320} text="OPEN" color="#fbbf24" fontSize={8} fontWeight="600" />
+      <Block x={790} y={278} w={75} h={34} label="U4 BTS441" sublabel="PROFET" fill="#1e293b" stroke="#f59e0b" fontSize={9} />
+      <line x1={700} y1={278} x2={790} y2={278} stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 2" />
+      <Arrow x1={865} y1={295} x2={900} y2={295} color="#f59e0b" />
+
+      <Block x={900} y={278} w={45} h={34} label="Pre" fill="#0f172a" stroke="#f59e0b" fontSize={9} />
+      <Label x={922} y={320} text="OPEN" color="#fbbf24" fontSize={8} fontWeight="600" />
 
       {/* ═══ ROW 3: Switching Sequence ═══ */}
 
       <rect x={25} y={340} width={935} height={60} rx={6} fill="#111827" stroke="#374151" strokeWidth={1} />
       <text x={ISO} y={355} textAnchor="middle" fill="#d1d5db" fontSize={10} fontWeight="600">Switching Sequence</text>
       <text x={35} y={371} fill="#94a3b8" fontSize={8}>
-        {"1. Precharge contactor closes -> MPPT DC link charges through precharge R -> V_mppt rises toward V_bat"}
+        {"1. OPTO LOW (precharging) → U3 inverter forces U4 BTS441 ON → precharge contactor closed → DC link charges through precharge R"}
       </text>
       <text x={35} y={384} fill="#94a3b8" fontSize={8}>
-        {"2. V_mppt hits 90% of V_bat -> HV comparator fires -> opto crosses isolation -> LV divider scales 24 V down to 5 V logic"}
+        {"2. V_mppt hits 90% V_bat → TLV3211 output flips HIGH → R16 drives U1 opto LED → LV-side OPTO_OUT1 pulled HIGH"}
       </text>
       <text x={35} y={397} fill="#94a3b8" fontSize={8}>
-        {"3. Transistor switches PROFET gate -> PROFET closes main +ve contactor + P-ch MOSFET opens precharge (simultaneous)"}
+        {"3. U3 inverter swaps states atomically: U5 BTS441 ON (main +ve closes) + U4 BTS441 OFF (precharge opens) — no firmware sequencing"}
       </text>
 
       {/* Legend */}
@@ -365,7 +377,7 @@ function HWVerificationDiagram() {
         <Label x={576} y={0} text="Comparator / LED" color="#6ee7b7" fontSize={8} anchor="start" />
 
         <rect x={700} y={-5} width={10} height={10} rx={2} fill="#1e293b" stroke="#f59e0b" strokeWidth={1.5} />
-        <Label x={716} y={0} text="Precharge ctrl" color="#fcd34d" fontSize={8} anchor="start" />
+        <Label x={716} y={0} text="Precharge path (inverted)" color="#fcd34d" fontSize={8} anchor="start" />
       </g>
 
       {/* Ground separation note */}

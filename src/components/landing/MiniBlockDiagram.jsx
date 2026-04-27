@@ -56,22 +56,22 @@ export default function MiniBlockDiagram() {
       <text x={185} y={68} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">Precharge R</text>
 
       <rect x={156} y={76} width={58} height={12} rx={3} fill="#1e293b" stroke="#a78bfa" strokeWidth={0.8} />
-      <text x={185} y={84} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">24 to 5 V Iso Buck</text>
+      <text x={185} y={84} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">RKE-2405 Iso Buck</text>
 
       <rect x={156} y={92} width={58} height={12} rx={3} fill="#1e293b" stroke="#22c55e" strokeWidth={0.8} />
-      <text x={185} y={100} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">90% Comparator</text>
+      <text x={185} y={100} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">TLV3211 @ 90%</text>
 
       <line x1={156} y1={108} x2={214} y2={108} stroke="#ef4444" strokeWidth={0.8} strokeDasharray="3 2" />
       <text x={185} y={116} textAnchor="middle" fill="#ef4444" fontSize="4">HV / LV Isolation</text>
 
       <rect x={156} y={121} width={58} height={12} rx={3} fill="#1e293b" stroke="#475569" strokeWidth={0.8} />
-      <text x={185} y={129} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">Opto + Divider</text>
+      <text x={185} y={129} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">Opto + CMOS Inv.</text>
 
       <rect x={156} y={135} width={58} height={11} rx={3} fill="#1e293b" stroke="#f59e0b" strokeWidth={0.8} />
-      <text x={185} y={142} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">PROFET to Main +</text>
+      <text x={185} y={142} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">U5 BTS441 → Main</text>
 
       <rect x={156} y={148} width={58} height={11} rx={3} fill="#1e293b" stroke="#f59e0b" strokeWidth={0.8} />
-      <text x={185} y={155} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">P-ch to Pre OFF</text>
+      <text x={185} y={155} textAnchor="middle" fill="#e2e8f0" fontSize="4.5">U4 BTS441 → Pre</text>
 
       <line x1={223} y1={85} x2={248} y2={85} stroke="#3b82f6" strokeWidth={1} />
       <polygon points="248,85 243,82 243,88" fill="#3b82f6" />

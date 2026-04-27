@@ -224,7 +224,8 @@ function SchematicSection({ mod, projectId }) {
           <PdfViewer
             pdfPath={mod.schematicPath}
             page={1}
-            title={`${mod.name} -Schematic`}
+            pageCount={mod.schematicPageCount || 1}
+            title={`${mod.name} — Schematic`}
             className="w-full h-full"
           />
         </div>
