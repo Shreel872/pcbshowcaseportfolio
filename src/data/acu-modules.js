@@ -46,8 +46,32 @@ export const modules = [
     modelPath: null,
     gerberFiles: [],
     layoutPath: null,
-    schematicPath: "/schematics/ACU.pdf",
-    schematicPageCount: 4,
+    // Default schematic shown — top level ACU_MAIN sheet.
+    schematicPath: "/schematics/ACU-top.pdf",
+    // Block hierarchy: each entry is its own PDF so navigation is clean.
+    schematicBlocks: [
+      {
+        id: "top",
+        label: "Top Level",
+        sublabel: "ACU_MAIN — power + block hierarchy",
+        path: "/schematics/ACU-top.pdf",
+        role: "parent",
+      },
+      {
+        id: "hv",
+        label: "HV Sub-block",
+        sublabel: "U_HV — divider + TLV3211 comparator",
+        path: "/schematics/ACU-HV.pdf",
+        role: "child",
+      },
+      {
+        id: "lv",
+        label: "LV Sub-block",
+        sublabel: "U_LV — CMOS inverter + 2× BTS441 PROFETs",
+        path: "/schematics/ACU-LV.pdf",
+        role: "child",
+      },
+    ],
     photoPath: null,
 
     blockDiagrams: ["system", "hw-verification"],
@@ -198,7 +222,7 @@ export const modules = [
         ],
         chosen: {
           label: "Resistive divider + TLV3211 comparator",
-          reason: "SPICE-verified, rail-to-rail push-pull output, no firmware",
+          reason: "Hand-verified threshold, rail-to-rail push-pull output, no firmware",
         },
         rejected: {
           label: "MCU ADC on HV plane",
@@ -313,7 +337,7 @@ export const modules = [
       "Optocoupler U1 sits on the HV/LV boundary. Emitter side lives on the HV plane with the comparator output (driven through R16 = 75 Ω current limit), phototransistor side lives on the LV plane and sources OPTO_OUT1. Light across the gap is the only path for the control signal.",
       "U2 = RKE-2405S/H isolated buck takes the LV 24 V rail and delivers 5 V onto the HV floating ground plane to power the comparator. Galvanic isolation is built into the converter transformer so the HV and LV grounds stay separate.",
       "D1 status LED hangs off the HV 5 V rail through R15 = 140 Ω, drawing ~20 mA (~100 mW). Isolated bucks need a minimum load to stay in regulation and the LED guarantees that baseline draw. Also doubles as a visual indicator that the HV side is powered.",
-      "HV voltage dividers scale MPPT and battery down into comparator input range (≈3 V). Both top legs are 4 × 250 kΩ in series (RNCF0805BTE250K, 0.1% thin-film). Bottom legs use R9 = 21.3 kΩ (battery, RN73 0.1%) and R10 = 23.7 kΩ (MPPT, RMCF 1%). SPICE confirms trip lands at 90.08% of V_bat.",
+      "HV voltage dividers scale MPPT and battery down into comparator input range (≈3 V). Both top legs are 4 × 250 kΩ in series (RNCF0805BTE250K, 0.1% thin-film). Bottom legs use R9 = 21.3 kΩ (battery, RN73 0.1%) and R10 = 23.7 kΩ (MPPT, RMCF 1%). Hand-calculated trip lands at 90.08% of V_bat — verified by the animated walk-through on this site.",
       "Comparator COMP1 = TLV3211QDCKRQ1. Picked for rail-to-rail input (so the ~3 V tap voltages are inside the linear range against a 5 V supply) and push-pull output (no external pull-up needed to drive the opto LED). C2 = 100 nF decoupling sits at the V+ pin.",
       "On the LV side a single CMOS inverter U3 splits OPTO_OUT1 into two mutually-exclusive logic signals — one inverted, one direct. Each signal feeds a 12 kΩ / 51 kΩ divider that scales 24 V logic down into the BTS441 IN-pin range.",
       "U5 = BTS441TGATMA1 PROFET drives the main +ve contactor coil from 24 V (active when OPTO is HIGH = post-precharge). U4 = BTS441TGATMA1 drives the precharge contactor coil (active when OPTO is LOW = precharging). The inverter guarantees these are never both on at the same time.",

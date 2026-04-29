@@ -284,7 +284,7 @@ function HWVerificationDiagram() {
       <Block x={25} y={260} w={95} h={40} label="MPPT+" sublabel="DC link (rising)" fill="#0f172a" stroke="#3b82f6" fontSize={11} />
       <Arrow x1={120} y1={280} x2={158} y2={280} color="#3b82f6" />
 
-      <Block x={158} y={265} w={95} h={32} label="V. Divider" sublabel="SPICE-sim'd" fill="#1e293b" stroke="#f59e0b" fontSize={10} />
+      <Block x={158} y={265} w={95} h={32} label="V. Divider" sublabel="hand-verified" fill="#1e293b" stroke="#f59e0b" fontSize={10} />
       <Arrow x1={253} y1={281} x2={293} y2={250} color="#64748b" />
       <Label x={255} y={295} text="Scaled V_mppt" color="#94a3b8" fontSize={7} anchor="start" />
 

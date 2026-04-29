@@ -374,40 +374,25 @@ export default function PrechargeSimulator() {
       <div className="max-w-5xl mx-auto p-4 sm:p-6">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">
-              LTspice · .tran 10ms · Live Replay
-            </p>
-            <h3 className="text-lg font-semibold text-gray-100 mb-2">
-              HV Voltage Divider + TLV3211 Comparator
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
-              Reproduced from the LTspice transient run used to confirm the
-              divider ratios. The <span className="font-mono text-green-400">MPPT tap</span>{" "}
-              tracks the DC link voltage as it charges up;{" "}
-              <span className="font-mono text-indigo-300">battery V_ref</span> is a fixed
-              fraction of 142.7 V set by R9. When the MPPT tap crosses V_ref, the
-              TLV3211 output (VERIF_SIG) flips HIGH, signalling that the DC link
-              has reached ≈90% of battery voltage and the main contactor can close.
-              The linear ramp is a test stimulus for clarity — the real DC link
-              follows an RC curve through the precharge resistor, but the trip
-              threshold is identical.
-            </p>
-          </div>
-          {/* SPICE file download — drop acu-precharge.asc into /public to enable */}
-          <a
-            href="/acu-precharge.asc"
-            download
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded border border-gray-700 bg-gray-900 text-gray-400 hover:text-gray-200 hover:border-gray-500 text-[11px] font-mono transition-colors"
-            title="Download LTspice schematic"
-          >
-            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="currentColor">
-              <path d="M8 12l-4-4h2.5V3h3v5H12L8 12z"/>
-              <rect x="2" y="13" width="12" height="1.5" rx="0.75"/>
-            </svg>
-            .asc
-          </a>
+        <div className="mb-4">
+          <p className="text-[11px] uppercase tracking-widest text-gray-500 mb-1">
+            Trip Threshold Walk-through · Live Replay
+          </p>
+          <h3 className="text-lg font-semibold text-gray-100 mb-2">
+            HV Voltage Divider + TLV3211 Comparator
+          </h3>
+          <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
+            Animated walk-through of the divider + comparator trip behaviour.
+            The <span className="font-mono text-green-400">MPPT tap</span> tracks
+            the DC link voltage as it charges up;{" "}
+            <span className="font-mono text-indigo-300">battery V_ref</span> is a fixed
+            fraction of 142.7 V set by R9. When the MPPT tap crosses V_ref, the
+            TLV3211 output (VERIF_SIG) flips HIGH, signalling that the DC link
+            has reached ≈90% of battery voltage and the main contactor can close.
+            The linear ramp is a test stimulus for clarity — the real DC link
+            follows an RC curve through the precharge resistor, but the trip
+            threshold is identical.
+          </p>
         </div>
 
         {/* Status bar */}

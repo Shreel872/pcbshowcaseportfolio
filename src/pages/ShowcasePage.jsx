@@ -206,10 +206,20 @@ function SchematicSection({ mod, projectId }) {
   const toggles = hasSpice
     ? [
         { id: "schematic", label: "Schematic" },
-        { id: "spice", label: "SPICE Simulation" },
+        { id: "spice", label: "Trip Threshold Walk-through" },
       ]
     : null;
   const [view, setView] = useState("schematic");
+  const blocks = mod.schematicBlocks || null;
+  const [activeBlockId, setActiveBlockId] = useState(blocks?.[0]?.id ?? null);
+  const activeBlock = blocks?.find((b) => b.id === activeBlockId) ?? blocks?.[0];
+
+  // Either pull the active block PDF (multi-block schematics like the ACU)
+  // or fall back to the single-PDF default.
+  const activePdfPath = activeBlock?.path ?? mod.schematicPath;
+  const activeTitle = activeBlock
+    ? `${mod.name} — ${activeBlock.label}`
+    : `${mod.name} — Schematic`;
 
   return (
     <Section id="schematic" eyebrow="Circuit" title="Schematic">
@@ -220,13 +230,27 @@ function SchematicSection({ mod, projectId }) {
       )}
 
       {view === "schematic" && (
-        <div className="w-full aspect-[16/9] rounded-lg border border-gray-800/60 bg-gray-900/30 overflow-hidden">
+        <div
+          className={`w-full rounded-lg border border-gray-800/60 bg-gray-900/30 overflow-hidden ${
+            blocks
+              ? "flex flex-col md:grid md:grid-cols-[220px_1fr] h-[70vh] md:h-auto md:aspect-[16/9]"
+              : "h-[70vh] md:h-auto md:aspect-[16/9]"
+          }`}
+        >
+          {blocks && (
+            <SchematicBlockNav
+              blocks={blocks}
+              activeId={activeBlockId}
+              onSelect={setActiveBlockId}
+            />
+          )}
           <PdfViewer
-            pdfPath={mod.schematicPath}
+            key={activePdfPath}
+            pdfPath={activePdfPath}
             page={1}
             pageCount={mod.schematicPageCount || 1}
-            title={`${mod.name} — Schematic`}
-            className="w-full h-full"
+            title={activeTitle}
+            className="w-full h-full min-h-0 flex-1"
           />
         </div>
       )}
@@ -237,6 +261,85 @@ function SchematicSection({ mod, projectId }) {
         </div>
       )}
     </Section>
+  );
+}
+
+// ─── Schematic block nav: sidebar on desktop, pill rail on mobile ──
+function SchematicBlockNav({ blocks, activeId, onSelect }) {
+  return (
+    <aside
+      className="
+        border-b md:border-b-0 md:border-r border-gray-800/60 bg-gray-950/50
+        flex flex-row md:flex-col min-h-0 shrink-0
+      "
+    >
+      {/* Header (desktop only — eats too much vertical space on mobile) */}
+      <div className="hidden md:block px-3 py-2.5 border-b border-gray-800/60">
+        <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold">
+          Block hierarchy
+        </p>
+      </div>
+
+      <nav
+        className="
+          flex flex-row md:flex-col
+          gap-1 p-2
+          overflow-x-auto md:overflow-x-visible md:overflow-y-auto
+          md:flex-1
+        "
+      >
+        {blocks.map((b) => {
+          const active = b.id === activeId;
+          const isChild = b.role === "child";
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => onSelect(b.id)}
+              className={`
+                shrink-0 md:w-full text-left rounded-md px-2.5 py-1.5 md:py-2 transition-colors
+                ${isChild ? "md:ml-3" : ""}
+                ${
+                  active
+                    ? "bg-amber-500/10 border border-amber-500/40"
+                    : "border border-transparent hover:bg-gray-800/50"
+                }
+              `}
+            >
+              <div className="flex items-center md:items-start gap-2">
+                {isChild && (
+                  <span
+                    className={`text-[10px] font-mono select-none shrink-0 md:mt-[2px] ${
+                      active ? "text-amber-400/80" : "text-gray-600"
+                    }`}
+                  >
+                    └─
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <div
+                    className={`text-[11px] md:text-[12px] font-semibold leading-tight whitespace-nowrap md:whitespace-normal ${
+                      active ? "text-amber-200" : "text-gray-200"
+                    }`}
+                  >
+                    {b.label}
+                  </div>
+                  {b.sublabel && (
+                    <div
+                      className={`hidden md:block text-[10px] leading-snug mt-0.5 ${
+                        active ? "text-amber-300/70" : "text-gray-500"
+                      }`}
+                    >
+                      {b.sublabel}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }
 
